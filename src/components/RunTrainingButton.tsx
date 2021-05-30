@@ -1,17 +1,104 @@
-import React from "react";
-import * as tf from '@tensorflow/tfjs';
+import React, { useState } from "react";
+import * as tf from "@tensorflow/tfjs";
+import { useLoading } from "../hooks/useLoading";
+import { Loader } from "./Loader";
 
 export const RunTrainingButton = () => {
-  const handleRunTraining = () => {
-    tf.tensor([[1, 2], [3, 4]]).print();
+  const [inputNumber, setInputNumber] = useState(0);
+  const [tfTrainingModel, setTfTrainingModel] = useState(tf.sequential());
+  const [result, setResult] = useState(0);
+  const [state, dispatch] = useLoading();
+
+  const doTraining = async () => {
+    dispatch({ type: "start" });
+    const model = tfTrainingModel;
+    model.add(
+      tf.layers.dense({
+        units: 1,
+        inputShape: [1],
+      })
+    );
+
+    model.compile({
+      loss: "meanSquaredError",
+      optimizer: "sgd",
+    });
+
+    const xs = tf.tensor2d([-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9], [11, 1]);
+    const ys = tf.tensor2d([-3, -1, 1, 3, 5, 7, 9, 11, 13, 15, 17], [11, 1]);
+
+    const callbacks = {
+      onEpochEnd: async (epoch: any, logs: any) => {
+        console.log(`epoch: ${epoch} ${JSON.stringify(logs)}`);
+      },
+    };
+
+    await model.fit(xs, ys, { epochs: 200, callbacks: callbacks });
+
+    setTfTrainingModel(model);
+    console.log("success");
+    dispatch({ type: "success" });
   };
 
+  const handleChange = (e: React.FormEvent<HTMLInputElement>) => {
+    const inputNumber = Number(e.currentTarget.value);
+
+    if (isNaN(inputNumber)) {
+      return;
+    }
+
+    setInputNumber(inputNumber);
+
+    const prediction = tfTrainingModel.predict(
+      tf.tensor2d([inputNumber], [1, 1])
+    ) as tf.Tensor;
+
+    var res = prediction.dataSync()[0];
+    setResult(res);
+  };
+
+  if (state.status === "empty") {
+    return (
+      <button
+        className="  bg-green-700 text-white text-sm rounded-md px-3 py-2 hover:bg-green-600"
+        onClick={doTraining}
+      >
+        Run training
+      </button>
+    );
+  }
+
+  if (state.status === "loading") {
+    return (
+      <button
+        className=" bg-gray-700 text-white text-sm rounded-md px-3 py-2 "
+        disabled
+      >
+        <Loader />
+      </button>
+    );
+  }
+
   return (
-    <button
-      className="mt-2 sm:mt-0 sm:ml-6  bg-green-700 text-white text-sm  rounded-md px-3 py-2 hover:bg-green-600"
-      onClick={handleRunTraining}
-    >
-      Run training
-    </button>
+    <div>
+      <h1>Calucated y = x * 2 - 1</h1>
+      <label>
+        Number:
+        <input
+          type="text"
+          className="pt-3 pb-2 block  px-0 mt-0 bg-transparent border-0 border-b-2 appearance-none focus:outline-none focus:ring-0 focus:border-black border-gray-200"
+          onChange={handleChange}
+        />
+      </label>
+      <div className="mt-5">
+        <p className="text-xl">Orginal</p>
+        <p>Result: {inputNumber ? inputNumber * 2 - 1 : ""}</p>
+      </div>
+      <div className="mt-5">
+        <span className="text-xl">AI</span>
+        <p>Result: {result ? result : ""}</p>
+        <p>Rounded Result: {result ? Math.round(result) : ""}</p>
+      </div>
+    </div>
   );
 };
