@@ -1,6 +1,6 @@
 import React from "react";
 export const Loader = () => {
-  let circleCommonClasses = "h-2.5 w-2.5 bg-current   rounded-full";
+  const circleCommonClasses = "h-2.5 w-2.5 bg-current   rounded-full";
 
   return (
     <div className="flex">

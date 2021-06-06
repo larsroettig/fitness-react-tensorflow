@@ -1,17 +1,30 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import * as tf from "@tensorflow/tfjs";
 import { useLoading } from "../hooks/useLoading";
 import { Loader } from "./Loader";
+import { useLoadPosenet } from "../hooks/useLoadPosenet";
 
 export const RunTrainingButton = () => {
   const [inputNumber, setInputNumber] = useState(0);
-  const [tfTrainingModel, setTfTrainingModel] = useState(tf.sequential());
+  const [tfTrainingModel, setTfTrainingModel] =
+    useState<tf.Sequential | null>(null);
   const [result, setResult] = useState(0);
   const [state, dispatch] = useLoading();
 
+  const PosenetModel = useLoadPosenet({
+    architecture: "MobileNetV1",
+    outputStride: 16,
+    inputResolution: { width: 800, height: 600 },
+    multiplier: 0.75,
+  });
+
+  useEffect(() => {
+    console.log(PosenetModel);
+  }, [PosenetModel]);
+
   const doTraining = async () => {
     dispatch({ type: "start" });
-    const model = tfTrainingModel;
+    const model = tf.sequential();
     model.add(
       tf.layers.dense({
         units: 1,
@@ -49,12 +62,15 @@ export const RunTrainingButton = () => {
 
     setInputNumber(inputNumber);
 
+    if (tfTrainingModel === null) {
+      return;
+    }
+
     const prediction = tfTrainingModel.predict(
       tf.tensor2d([inputNumber], [1, 1])
     ) as tf.Tensor;
 
-    var res = prediction.dataSync()[0];
-    setResult(res);
+    setResult(prediction.dataSync()[0]);
   };
 
   if (state.status === "empty") {

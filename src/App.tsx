@@ -2,7 +2,7 @@ import React from "react";
 
 import { RunTrainingButton } from "./components/RunTrainingButton";
 
-function App() {
+const App = (): JSX.Element => {
   return (
     <div className="App">
       <div className="w-screen h-screen flex justify-center items-center bg-gray-100">
@@ -12,6 +12,6 @@ function App() {
       </div>
     </div>
   );
-}
+};
 
 export default App;
